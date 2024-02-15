@@ -1,6 +1,6 @@
 {
   "name": "@jdachtera/react-solid-bridge",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "packageManager": "pnpm@8.6.8",
   "license": "MIT",
   "publishConfig": {
