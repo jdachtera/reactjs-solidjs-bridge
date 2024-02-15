@@ -1,42 +1,21 @@
-import {
-  useEffect,
-  useRef,
-} from 'react'
+import { ReactNode, useEffect, useRef } from 'react'
 
 export type ReactToSolidPortalElementProps = {
-  getChildElement: (
-    domElement: HTMLDivElement
-  ) => void
+  getChildElement: (domElement: HTMLDivElement) => void
 }
 
-export const ReactToSolidPortalElement = ({
-  getChildElement,
-}: ReactToSolidPortalElementProps) => {
-  const domElementRef = (
-    useRef<
-      HTMLDivElement
-    >(
-      null
+export const ReactToSolidPortalElement = (
+  props: ReactToSolidPortalElementProps,
+): ReactNode => {
+  const domElementRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    props.getChildElement(
+      domElementRef.current as HTMLDivElement, // We know better on how React works. This will always have a DOM element. It can never be `null`.
     )
-  )
+  }, [])
 
-  useEffect(
-    () => {
-      getChildElement(
-        (
-          domElementRef
-          .current
-        ) as ( // We know better on how React works. This will always have a DOM element. It can never be `null`.
-          HTMLDivElement
-        )
-      )
-    },
-    [],
-  )
-
-  return (
-    <div ref={domElementRef} />
-  )
+  return <div ref={domElementRef} />
 }
 
 export default ReactToSolidPortalElement

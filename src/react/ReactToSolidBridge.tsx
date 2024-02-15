@@ -6,52 +6,40 @@ import {
   useRef,
   useState,
 } from 'react'
-import {
-  createPortal,
-} from 'react-dom'
-import {
-  type ParentComponent,
-  createSignal,
-} from 'solid-js'
-import {
-  Portal,
-} from 'solid-js/web'
+import { createPortal } from 'react-dom'
+import { type ParentComponent, Component, JSX as SolidJSX } from 'solid-js'
+import { createStore } from 'solid-js/store'
+import { DOMElement } from 'solid-js/types/jsx'
+import { Portal } from 'solid-js/web'
+import { SolidBridgeContainer } from '../solid/SolidBridgeContainer'
+import { SolidToReactPortalElement } from '../solid/SolidToReactPortalElement'
+import { ReactToSolidBridgeContext } from './ReactToSolidBridgeContext'
+import { useItems } from './useItems'
 
-import {
-  ReactToSolidBridgeContext,
-} from './ReactToSolidBridgeContext'
-import {
-  SolidBridgeContainer,
-} from '../solid/SolidBridgeContainer'
-import {
-  SolidToReactPortalElement,
-} from '../solid/SolidToReactPortalElement'
-import {
-  useItems,
-} from './useItems'
+export type ReactToSolidBridgeProps<
+  Props extends Record<string, unknown> | undefined,
+> = {
+  children: ReactNode
+  props: Props
+} & (
+  | {
+      getSolidComponent: (props: {
+        getChildren: () => SolidJSX.Element
+        props: Props
+      }) => SolidJSX.Element
+      solidComponent?: never
+    }
+  | {
+      solidComponent: Component<Props> | ParentComponent<Props>
+      getSolidComponent?: never
+    }
+)
 
-const initialSolidSignals = {}
-
-export type ReactToSolidBridgeType = {
-  children: ReactNode,
-  getSolidComponent: () => ParentComponent,
-  props: Record<string, any>,
-  solidComponent: ParentComponent,
-}
-
-export const ReactToSolidBridge = ({
-  children,
-  getSolidComponent,
-  props,
-  solidComponent,
-}: ReactToSolidBridgeType) => {
-  const {
-    addSolidChild,
-    removeSolidChild,
-  } = (
-    useContext(
-      ReactToSolidBridgeContext
-    )
+export function ReactToSolidBridge<
+  Props extends Record<string, unknown> | undefined,
+>(props: ReactToSolidBridgeProps<Props>) {
+  const { addSolidChild, removeSolidChild } = useContext(
+    ReactToSolidBridgeContext,
   )
 
   const {
@@ -59,338 +47,165 @@ export const ReactToSolidBridge = ({
     getItems: getSolidGrandchildren,
     removeItem: removeSolidGrandchild,
     subscribeToItems: subscribeToSolidGrandchildren,
-  } = (
-    useItems()
-  )
+  } = useItems<Component>()
 
-  const [
-    portalDomElement,
-    setPortalDomElement,
-  ] = (
-    useState()
-  )
+  const [portalDomElement, setPortalDomElement] = useState<DOMElement>()
 
-  const parentDomElement = (
-    useRef<
-      HTMLDivElement
-    >(
-      null
+  const parentDomElement = useRef<HTMLDivElement>(null)
+
+  const getSolidComponentRef = useRef(props.getSolidComponent)
+
+  useEffect(() => {
+    getSolidComponentRef.current = props.getSolidComponent
+  }, [props.getSolidComponent])
+
+  const solidComponentRef = useRef(props.solidComponent)
+
+  useEffect(() => {
+    solidComponentRef.current = props.solidComponent
+  }, [props.solidComponent])
+
+  const [solidProps, setSolidProps] = useMemo(() => {
+    const [store, setStore] = createStore<Record<string, unknown>>(
+      props.props ?? {},
     )
-  )
+    return [store, setStore]
+  }, [])
 
-  const getSolidComponentRef = (
-    useRef(
-      getSolidComponent
-    )
-  )
+  useEffect(() => {
+    setSolidProps((prevProps) => ({ ...prevProps, ...props.props }))
+  }, [props.props])
 
-  useEffect(
-    () => {
-      getSolidComponentRef
-      .current = (
-        getSolidComponent
+  useEffect(() => {
+    if (!addSolidChild) {
+      throw new Error(
+        'You need to wrap `ReactToSolidBridge` in a `ReactToSolidBridgeProvider` component at the top-level of your React app.',
       )
-    },
-    [
-      getSolidComponent
-    ]
-  )
+    }
 
-  const solidComponentRef = (
-    useRef(
-      solidComponent
-    )
-  )
-
-  useEffect(
-    () => {
-      solidComponentRef
-      .current = (
-        solidComponent
-      )
-    },
-    [
-      solidComponent
-    ]
-  )
-
-  const propsRef = (
-    useRef(
-      props
-    )
-  )
-
-  useEffect(
-    () => {
-      propsRef
-      .current = (
-        props
-      )
-    },
-    [
-      props
-    ]
-  )
-
-  const solidPropsRef = (
-    useRef()
-  )
-
-  const solidSignalsRef = (
-    useRef(
-      initialSolidSignals
-    )
-  )
-
-  useEffect(
-    () => {
-      for (let prop in (props?.values || props)) {
-        if (
-          typeof (
-            props
-            [prop]
-          )
-          === 'function'
-        ) {
-          if (
-            !(
-              solidSignalsRef
-              .current
-              [prop]
-            )
-          ) {
-            solidSignalsRef
-            .current = {
-              ...(
-                solidSignalsRef
-                .current
-              ),
-              [prop]: [
-                (
-                  ...args
-                ) => (
-                  propsRef
-                  .current
-                  [prop](
-                    ...args
-                  )
-                )
-              ],
-            }
-          }
-        }
-        else {
-          if (
-            !(
-              solidSignalsRef
-              .current
-              [prop]
-            )
-          ) {
-            solidSignalsRef
-            .current = {
-              ...(
-                solidSignalsRef
-                .current
-              ),
-              [prop]: (
-                createSignal(
-                  props
-                  [prop]
-                )
-              ),
-            }
-          }
-          else {
-            solidSignalsRef
-            .current
-            [prop]
-            [1](
-              props
-              [prop]
-            )
-          }
-        }
-      }
-
-      if (
-        !(
-          solidPropsRef
-          .current
-        )
-      ) {
-        solidPropsRef
-        .current = (
-          Object
-          .fromEntries(
-            Object
-            .entries(
-              solidSignalsRef
-              .current
-            )
-            .map(([
-              key,
-              value,
-            ]) => ([
-              key,
-              (
-                value
-                [0]
-              ),
-            ]))
-          )
-        )
-      }
-    },
-    [
-      props,
-    ],
-  )
-
-  useEffect(
-    () => {
-      if (!addSolidChild) {
-        throw new Error(
-          'You need to wrap `ReactToSolidBridge` in a `ReactToSolidBridgeProvider` component at the top-level of your React app.'
-        )
-      }
-
-      const getSolidChildren = () => ([
-        SolidToReactPortalElement({
-          getChildElement: (
-            setPortalDomElement
-          ),
-        }),
-        (
-          SolidBridgeContainer({
-            getChildren: (
-              getSolidGrandchildren
-            ),
-            subscribeToChildren: (
-              subscribeToSolidGrandchildren
-            ),
-          })
-        )
-      ])
-
-      const SolidChildComponent = () => (
-        Portal({
-          get children() {
-            if (
-              solidComponentRef
-              .current
-            ) {
-              const proxy = (
-                new Proxy(
-                  {
-                    get children() {
-                      return getSolidChildren()
-                    }
-                  },
-                  {
-                    get: (
-                      proxy,
-                      propertyName,
-                    ) => (
-                      (
-                        propertyName in (
-                          solidPropsRef
-                          .current
-                        )
-                      )
-                      ? (
-                        solidPropsRef
-                        .current
-                        [propertyName]()
-                      )
-                      : (
-                        Reflect
-                        .get(
-                          proxy,
-                          propertyName,
-                        )
-                      )
-                    ),
-                  }
-                )
-              )
-
-              return (
-                solidComponentRef
-                .current(
-                  proxy
-                )
-              )
-            }
-            else {
-              return (
-                getSolidComponentRef
-                .current({
-                  getChildren: getSolidChildren,
-                  props: (
-                    solidPropsRef
-                    .current
-                  ),
-                })
-              )
-            }
-          },
-          mount: (
-            parentDomElement
-            .current
-          ),
-        })
-      )
-
-      addSolidChild(
-        SolidChildComponent
-      )
-
-      return () => {
-        removeSolidChild(
-          SolidChildComponent
-        )
-      }
-    },
-    [
-      addSolidChild,
-      getSolidGrandchildren,
-      removeSolidChild,
-      subscribeToSolidGrandchildren,
-    ],
-  )
-
-  const providerValue = (
-    useMemo(
-      () => ({
-        addSolidChild: addSolidGrandchild,
-        removeSolidChild: removeSolidGrandchild,
+    const getSolidChildren = () => [
+      SolidToReactPortalElement({
+        getChildElement: (domElement) => setPortalDomElement(domElement),
       }),
-      [
-        addSolidGrandchild,
-        removeSolidGrandchild,
-      ],
-    )
+      SolidBridgeContainer({
+        getChildren: getSolidGrandchildren,
+        subscribeToChildren: subscribeToSolidGrandchildren,
+      }),
+    ]
+
+    const SolidChildComponent = () =>
+      Portal({
+        get children() {
+          if (solidComponentRef.current) {
+            const proxy = new Proxy(
+              {
+                get children() {
+                  return getSolidChildren()
+                },
+              } as Props & { children: SolidJSX.Element[] },
+              {
+                get: (_proxy, propertyName) => {
+                  return solidProps[propertyName as string]
+                },
+              },
+            )
+
+            return solidComponentRef.current(proxy)
+          }
+
+          return getSolidComponentRef.current?.({
+            getChildren: getSolidChildren,
+            props: solidProps as Props,
+          })
+        },
+        mount: parentDomElement.current ?? undefined,
+      })
+
+    addSolidChild(SolidChildComponent)
+
+    return () => {
+      removeSolidChild(SolidChildComponent)
+    }
+  }, [
+    addSolidChild,
+    getSolidGrandchildren,
+    removeSolidChild,
+    subscribeToSolidGrandchildren,
+  ])
+
+  const providerValue = useMemo(
+    () => ({
+      addSolidChild: addSolidGrandchild,
+      removeSolidChild: removeSolidGrandchild,
+    }),
+    [addSolidGrandchild, removeSolidGrandchild],
   )
 
   return (
     <div ref={parentDomElement}>
-      <ReactToSolidBridgeContext.Provider
-        value={providerValue}
-      >
-        {
-          children
-          && portalDomElement
-          && (
-            createPortal(
-              children,
-              portalDomElement
-            )
-          )
-        }
+      <ReactToSolidBridgeContext.Provider value={providerValue}>
+        {props.children &&
+          portalDomElement &&
+          createPortal(props.children, portalDomElement)}
       </ReactToSolidBridgeContext.Provider>
     </div>
   )
 }
+
+// function createSolidPropsRef<
+//   Props extends Record<string, unknown>,
+// >(solidSignals: {
+//   [K in keyof Props]: Signal<Props[K]>
+// }) {
+//   return fromEntries(
+//     objectEntries(solidSignals).map(([key, value]) => [key, value[0]]),
+//   )
+// }
+
+// function createOrUpdateSolidSignals<Props extends Record<string, unknown>>(
+//   props: Props,
+//   propsRef: React.MutableRefObject<Props>,
+//   solidSignalsRef?: React.MutableRefObject<{
+//     [K in keyof Props]: Signal<Props[K]>
+//   }>,
+// ) {
+//   let solidSignals = solidSignalsRef?.current
+
+//   objectEntries(props).forEach(([prop, value]) => {
+//     const currentSignal = solidSignals?.[prop]
+//     if (typeof value === 'function') {
+//       if (!currentSignal) {
+//         solidSignals = {
+//           ...solidSignals,
+//           [prop]: [
+//             () => {
+//               const getter = propsRef.current[prop] as Accessor<
+//                 Props[keyof Props]
+//               >
+//               return getter()
+//             },
+//             () => {},
+//           ],
+//         } as {
+//           [K in keyof Props]: Signal<Props[K]>
+//         }
+//       }
+//     } else if (!currentSignal) {
+//       solidSignals = {
+//         ...solidSignals,
+//         // eslint-disable-next-line solid/reactivity
+//         [prop]: createSignal(props[prop]),
+//       } as {
+//         [K in keyof Props]: Signal<Props[K]>
+//       }
+//     } else {
+//       const setter = currentSignal[1]
+//       setter(props[prop] as Parameters<typeof setter>[0])
+//     }
+//   })
+
+//   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+//   return solidSignals!
+// }
 
 export default ReactToSolidBridge

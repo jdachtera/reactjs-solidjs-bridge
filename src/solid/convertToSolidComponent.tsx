@@ -1,29 +1,28 @@
-import { FunctionComponent } from 'react'
-import {
-  SolidToReactBridge,
-} from './SolidToReactBridge'
+import { ClassicComponentClass, FunctionComponent, createElement } from 'react'
 import { ParentComponent } from 'solid-js'
+import { SolidToReactBridge } from './SolidToReactBridge'
 
-export const convertToSolidComponent = <
-  Props,
->(
-  ReactComponent: (
-    FunctionComponent<
-      Props
-    >
-  ),
-) => {
-  const ConvertedReactComponent: (
-    ParentComponent<
-      Props
-    >
-  ) = (
-    props
+export function convertToSolidComponent<Props extends Record<string, unknown>>(
+  ReactComponent: FunctionComponent<Props> | ClassicComponentClass<Props>,
+) {
+  const ConvertedReactComponent: ParentComponent<Omit<Props, 'children'>> = (
+    props,
   ) => (
-    // TODO: Figure out why this component is being passed the wrong props.
     <SolidToReactBridge
       props={props}
-      solidComponent={ReactComponent}
+      getReactComponent={({ getChildren }) =>
+        createElement(
+          ReactComponent,
+          new Proxy(props, {
+            get: (_, key) => {
+              if (key === 'children') {
+                return getChildren()
+              }
+              return props[key as string]
+            },
+          }) as Props,
+        )
+      }
     >
       {props.children}
     </SolidToReactBridge>

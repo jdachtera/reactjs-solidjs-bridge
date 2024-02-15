@@ -1,113 +1,57 @@
-import {
-  type ReactElement,
-  type ReactNode,
-  createElement,
-} from 'react'
-import {
-  createRoot,
-} from 'react-dom/client'
+import { type ReactElement, createElement } from 'react'
 import {
   type ParentComponent,
   createEffect,
   createSignal,
   onCleanup,
+  useContext,
 } from 'solid-js'
-import {
-  Portal,
-} from 'solid-js/web'
+import { Portal } from 'solid-js/web'
+import { ReactToSolidPortalElement } from '../react/ReactToSolidPortalElement'
+import { ReactToSolidBridgeContext } from './SolidToReactBridgeContext'
 
-import {
-  ReactToSolidPortalElement,
-} from '../react/ReactToSolidPortalElement'
-
-export type SolidToReactBridgeType = {
+export type SolidToReactBridgeProps = {
   getReactComponent: ({
     getChildren,
   }: {
-    getChildren: () => (
-      ReactElement
-    ),
+    getChildren: () => ReactElement
   }) => ReactElement
+  props?: Record<string, unknown>
 }
 
-export const SolidToReactBridge: (
-  ParentComponent<
-    SolidToReactBridgeType
-  >
-) = (
+export const SolidToReactBridge: ParentComponent<SolidToReactBridgeProps> = (
   props,
 ) => {
-  const [
-    portalDomElement,
-    setPortalDomElement,
-  ] = (
-    createSignal<
-      HTMLDivElement
-    >()
+  const [portalDomElement, setPortalDomElement] = createSignal<HTMLDivElement>()
+
+  const { addReactChild, removeReactChild } = useContext(
+    ReactToSolidBridgeContext,
   )
 
-  let solidToReactElement: (
-    | HTMLDivElement
-    | undefined
-  )
+  let solidToReactElement: HTMLDivElement | undefined
 
-  createEffect(
-    () => {
-      const reactRoot = (
-        createRoot(
-          solidToReactElement as HTMLDivElement
-        )
-      )
+  createEffect(() => {
+    const component = props.getReactComponent({
+      getChildren: () =>
+        createElement(ReactToSolidPortalElement, {
+          getChildElement: (domElement: HTMLDivElement) => {
+            setPortalDomElement(domElement)
+          },
+        }),
+    })
 
-      reactRoot
-      .render (
-        props
-        .getReactComponent({
-          getChildren: () => (
-            createElement(
-              ReactToSolidPortalElement,
-              {
-                getChildElement: (
-                  domElement: HTMLDivElement,
-                ) => {
-                  setPortalDomElement(
-                    domElement
-                  )
-                },
-              },
-            )
-          )
-        })
-      )
+    addReactChild(component)
 
-      onCleanup(() => {
-        reactRoot
-        .unmount()
-      })
-    },
-  )
+    onCleanup(() => {
+      removeReactChild(component)
+    })
+  })
 
   return (
-    <div
-      ref={solidToReactElement}
-    >
-      {
-        (
-          props
-          .children
-        )
-        && portalDomElement()
-        && (
-          <Portal
-            mount={portalDomElement()}
-          >
-            {
-              props
-              .children
-            }
-          </Portal>
-        )
-      }
+    <div ref={solidToReactElement}>
+      {props.children && portalDomElement() && (
+        <Portal mount={portalDomElement()}>{props.children}</Portal>
+      )}
     </div>
   )
 }

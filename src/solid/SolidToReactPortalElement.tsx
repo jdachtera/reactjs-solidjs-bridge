@@ -1,19 +1,11 @@
-export const SolidToReactPortalElement = ({
-  getChildElement,
-}: {
-  getChildElement: (
-    domElement: (
-      HTMLElement
-    )
-  ) => void
-}) => {
+import { JSXElement } from 'solid-js'
+
+export const SolidToReactPortalElement = (props: {
+  getChildElement: (domElement: HTMLElement) => void
+}): JSXElement => {
   const domElement = <div />
 
-  getChildElement(
-    domElement as (
-      HTMLDivElement
-    )
-  )
+  props.getChildElement(domElement as HTMLDivElement)
 
   return domElement
 }

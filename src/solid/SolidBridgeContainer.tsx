@@ -5,70 +5,34 @@ import {
   createSignal,
   For,
   onCleanup,
+  untrack,
 } from 'solid-js'
 
 export type SolidBridgeContainerType = {
-  getChildren: () => (
-    Component
-  ),
+  getChildren: () => Component[]
   subscribeToChildren: (
-    subscriber: (
-      children: (
-        Component
-      )
-    ) => (
-      void
-    ),
-  ) => (
-    () => (
-      void
-    )
-  )
+    subscriber: (children: Component[]) => void,
+  ) => () => void
 }
 
-export const SolidBridgeContainer: (
-  ParentComponent<
-    SolidBridgeContainerType
-  >
-) = (
+export const SolidBridgeContainer: ParentComponent<SolidBridgeContainerType> = (
   props,
 ) => {
-  const [
-    children,
-    setChildren,
-  ] = (
-    createSignal(
-      props
-      .getChildren()
-    )
+  const [children, setChildren] = createSignal(
+    untrack(() => props.getChildren()),
   )
 
   createEffect(() => {
-    const unsubscribe = (
-      props
-      .subscribeToChildren((
-        children,
-      ) => {
-        setChildren(
-          children
-        )
-      })
-    )
+    const unsubscribe = props.subscribeToChildren((_children) => {
+      setChildren(_children)
+    })
 
     onCleanup(() => {
       unsubscribe()
     })
   })
 
-  return (
-    <For each={children()}>
-      {(
-        ChildComponent,
-      ) => (
-        <ChildComponent />
-      )}
-    </For>
-  )
+  return <For each={children()}>{(ChildComponent) => <ChildComponent />}</For>
 }
 
 export default SolidBridgeContainer

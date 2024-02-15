@@ -1,82 +1,61 @@
+import { ReactNode, createElement } from 'react'
+import { createRoot } from 'react-dom/client'
 import {
-  createElement,
-} from 'react'
-import {
-  render,
-  unmountComponentAtNode,
-} from 'react-dom'
-import {
+  ParentProps,
   createEffect,
+  createMemo,
   createSignal,
   onCleanup,
 } from 'solid-js'
-import {
-  Portal,
-} from 'solid-js/web'
-
-import SolidToReactBridgeContext from './SolidToReactBridgeContext'
 import ReactBridgeContainer from '../react/ReactBridgeContainer'
+import SolidToReactBridgeContext from './SolidToReactBridgeContext'
 import useItems from './useItems'
 
-const SolidToReactBridgeProvider = (
-  props,
-) => {
+type SolidToReactBridgeProviderProps = ParentProps
+
+const SolidToReactBridgeProvider = (props: SolidToReactBridgeProviderProps) => {
   const {
-    addItem: addSolidChild,
-    getItems: getSolidChildren,
-    removeItem: removeSolidChild,
-    subscribeToItems: subscribeToSolidChildren,
-  } = (
-    useItems()
-  )
+    addItem: addReactChild,
+    getValue: getReactChildren,
+    removeItem: removeReactChild,
+    subscribeToItems: subscribeToReactChildren,
+  } = useItems<ReactNode>()
 
-  // let solidToReactElementRef = {
-  //   current: null,
-  // }
+  const [parentDomElement, setParentDomElement] = createSignal<HTMLDivElement>()
 
-  // createEffect(
-  //   () => {
-  //     render(
-  //       (
-  //         props
-  //         .getReactComponent({
-  //           getChildren: () => (
-  //             createElement(
-  //               ReactToSolidPortalElement,
-  //               {
-  //                 getChildElement: (
-  //                   setPortalDomElement
-  //                 ),
-  //               },
-  //             )
-  //           )
-  //         })
-  //       ),
-  //     )
+  const reactRoot = createMemo(() => {
+    const element = parentDomElement()
+    if (!element) return undefined
 
-  //     onCleanup(() => {
-  //       unmountComponentAtNode(
-  //         solidToReactElementRef
-  //         .current
-  //       )
-  //     })
-  //   },
-  // )
+    return createRoot(element)
+  })
+
+  createEffect(() => {
+    const root = reactRoot()
+
+    const reactElement = createElement(ReactBridgeContainer, {
+      getChildren: getReactChildren,
+      subscribeToChildren: subscribeToReactChildren,
+    })
+
+    root?.render(reactElement)
+  })
+
+  onCleanup(() => {
+    reactRoot()?.unmount()
+  })
 
   const providerValue = {
-    addSolidChild,
-    removeSolidChild,
+    addReactChild,
+    removeReactChild,
   }
 
   return (
-    <div ref={parentDomElement}>
-      <SolidToReactBridgeContext.Provider
-        value={providerValue}
-      >
-        {children}
-      </SolidToReactBridgeContext.Provider>
-    </div>
+    <SolidToReactBridgeContext.Provider value={providerValue}>
+      {props.children}
+      <div ref={setParentDomElement} />
+    </SolidToReactBridgeContext.Provider>
   )
 }
 
-export default SolidToReactBridgeProvider
+export { SolidToReactBridgeProvider }

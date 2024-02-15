@@ -1,3 +1,6 @@
 export { convertToReactComponent } from './react/convertToReactComponent'
 export { ReactToSolidBridge } from './react/ReactToSolidBridge'
 export { ReactToSolidBridgeProvider } from './react/ReactToSolidBridgeProvider'
+export { convertToSolidComponent } from './solid/convertToSolidComponent'
+export { SolidToReactBridge } from './solid/SolidToReactBridge'
+export { SolidToReactBridgeProvider } from './solid/SolidToReactBridgeProvider'

@@ -1,56 +1,55 @@
-import {
-  defineConfig,
-} from 'vite'
-import solidPlugin from 'vite-plugin-solid'
+import path from 'path'
+import typescript from '@rollup/plugin-typescript'
 import reactPlugin from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
+import solidPlugin from 'vite-plugin-solid'
 
-import {
-  narrowSolidPlugin,
-} from './narrowSolidPlugin'
-
-// const restrictedSolidPlugin = solidPlugin()
-
-// const solidPluginTransform = (
-//   restrictedSolidPlugin
-//   .transform
-// )
-
-// restrictedSolidPlugin
-// .transform = (
-//   function(ast, id) {
-//     return (
-//       id
-//       .includes(
-//         '/src/solid'
-//       )
-//       ? (
-//         // @ts-expect-error
-//         solidPluginTransform(
-//           ...arguments
-//         )
-//       )
-//       : null
-//     )
-//   }
-// )
+const resolvePath = (str: string) => path.resolve(__dirname, str)
 
 // https://vitejs.dev/config/
 export default defineConfig({
   build: {
+    lib: {
+      entry: path.resolve(__dirname, 'src/index.ts'),
+      name: 'ReactSolid',
+    },
+    rollupOptions: {
+      external: [
+        'react',
+        'react-dom',
+        'react/jsx-runtime',
+        'solid-js',
+        'solid-js/web',
+      ],
+      output: {
+        // Provide global variables to use in the UMD build
+        // for externalized deps
+        globals: {
+          react: 'React',
+          'react-dom': 'ReactDOM',
+          'solid-js': 'Solid',
+          'solid-js/web': 'SolidWeb',
+        },
+      },
+      plugins: [
+        typescript({
+          allowSyntheticDefaultImports: true,
+          declaration: true,
+          declarationDir: resolvePath('./dist'),
+          exclude: resolvePath('./node_modules/**'),
+          rootDir: resolvePath('./src'),
+          target: 'es2020',
+        }),
+      ],
+    },
     target: 'ESNext',
   },
   define: {
-    'global': {},
+    global: {},
   },
+
   plugins: [
-    // restrictedSolidPlugin,
-    // solidPlugin(),
-    narrowSolidPlugin({ include: /\/src\/solid/ }),
-    reactPlugin(),
-    // reactPlugin({
-    //   // exclude: './src/solid',
-    //   // include: /react\/.+\.(js|jsx|ts|tsx)$/,
-    //   // include: './src/react',
-    // }),
+    solidPlugin({ include: /\/src\/solid/, ssr: true }),
+    reactPlugin({ include: /\/src\/react/ }),
   ],
 })

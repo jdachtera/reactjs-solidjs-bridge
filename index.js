@@ -7,9 +7,4 @@ const scripts = {
   },
 }
 
-scripts
-[
-  process
-  .argv
-  [2]
-]()
+scripts[process.argv[2]]()
