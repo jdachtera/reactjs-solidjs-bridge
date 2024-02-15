@@ -12,7 +12,7 @@
   "main:umd": "dist/react-solid-bridge.umd.js",
   "scripts": {
     "build": "vite build",
-    "start": "vite"
+    "dev": "vite"
   },
   "devDependencies": {
     "@babel/core": "^7.22.1",
