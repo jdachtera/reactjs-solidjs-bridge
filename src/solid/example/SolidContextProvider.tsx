@@ -4,7 +4,7 @@ import { SolidContext } from './SolidContext'
 export type SolidContextProviderProps =
   | {
       count: number
-      setCount: (count: number | ((prev: number) => number)) => void
+      setCount: (count: number) => void
     }
   | {
       count?: never
@@ -20,7 +20,7 @@ export const SolidContextProvider: ParentComponent<
       if (typeof props.count === 'number') return props.count
       return get()
     },
-    (value: number | ((prev: number) => number)) => {
+    (value: number) => {
       if (typeof props.setCount === 'function') {
         props.setCount(value)
       } else {
@@ -30,7 +30,7 @@ export const SolidContextProvider: ParentComponent<
   ]
 
   const incrementCount = () => {
-    setCount((localCount) => localCount + 1)
+    setCount(count() + 1)
   }
 
   return (
@@ -38,6 +38,7 @@ export const SolidContextProvider: ParentComponent<
       value={{
         count,
         incrementCount,
+        setCount,
       }}
     >
       {props.children}

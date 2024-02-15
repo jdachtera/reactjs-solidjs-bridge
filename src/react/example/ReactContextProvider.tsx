@@ -9,7 +9,16 @@ import { ReactContext } from './ReactContext'
 
 export type ReactContextProviderProps = {
   children: ReactNode
-}
+} & (
+  | {
+      count: number
+      setCount: (count: number) => void
+    }
+  | {
+      count?: never
+      setCount?: never
+    }
+)
 
 export const ReactContextProvider: FunctionComponent<
   ReactContextProviderProps
@@ -17,14 +26,24 @@ export const ReactContextProvider: FunctionComponent<
   const [count, setCount] = useState(0)
 
   const incrementCount = useCallback(() => {
-    setCount((localCount) => localCount + 1)
+    if (typeof props.setCount === 'function') {
+      props.setCount(props.count + 1)
+    } else {
+      setCount((localCount) => localCount + 1)
+    }
   }, [])
 
   const providerValue = useMemo(
     () => ({
-      count,
+      count: typeof props.setCount === 'function' ? props.count : count,
       incrementCount,
-      setCount,
+      setCount: (newCount: number) => {
+        if (typeof props.setCount === 'function') {
+          props.setCount(newCount)
+        } else {
+          setCount(newCount)
+        }
+      },
     }),
     [count, incrementCount],
   )

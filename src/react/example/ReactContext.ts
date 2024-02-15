@@ -3,7 +3,7 @@ import { createContext } from 'react'
 export type ReactContextType = {
   count: number
   incrementCount: () => void
-  setCount: (count: number | ((prev: number) => number)) => void
+  setCount: (count: number) => void
 }
 
 export const defaultReactContextValue: ReactContextType = {

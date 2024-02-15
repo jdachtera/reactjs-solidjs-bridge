@@ -3,8 +3,6 @@ import { ParentComponent, children as solidChildren } from 'solid-js'
 export const SolidComponent: ParentComponent = (props) => {
   const getChildren = solidChildren(() => props.children)
 
-  console.log(getChildren())
-
   return (
     <fieldset>
       <div>Solid component.</div>

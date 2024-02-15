@@ -1,10 +1,12 @@
 import { type ReactElement, createElement } from 'react'
+import { createPortal } from 'react-dom'
 import {
   type ParentComponent,
   createEffect,
   createSignal,
   onCleanup,
   useContext,
+  createMemo,
 } from 'solid-js'
 import { Portal } from 'solid-js/web'
 import { ReactToSolidPortalElement } from '../react/ReactToSolidPortalElement'
@@ -22,37 +24,60 @@ export type SolidToReactBridgeProps = {
 export const SolidToReactBridge: ParentComponent<SolidToReactBridgeProps> = (
   props,
 ) => {
-  const [portalDomElement, setPortalDomElement] = createSignal<HTMLDivElement>()
-
   const { addReactChild, removeReactChild } = useContext(
     ReactToSolidBridgeContext,
   )
 
-  let solidToReactElement: HTMLDivElement | undefined
+  const [portalDomElement, setPortalDomElement] = createSignal<HTMLDivElement>()
+  const [solidToReactElement, setSolidReactElement] = createSignal<
+    HTMLDivElement | undefined
+  >()
 
-  createEffect(() => {
-    const component = props.getReactComponent({
+  const reactComponent = createMemo(() =>
+    props.getReactComponent({
       getChildren: () =>
         createElement(ReactToSolidPortalElement, {
           getChildElement: (domElement: HTMLDivElement) => {
             setPortalDomElement(domElement)
           },
         }),
-    })
+    }),
+  )
 
-    addReactChild(component)
+  const componentName = createMemo(() => {
+    const component = reactComponent()
 
-    onCleanup(() => {
-      removeReactChild(component)
-    })
+    if (typeof component.type === 'function') {
+      return component.type.name
+    }
+
+    return component.type
+  })
+
+  createEffect(() => {
+    const element = solidToReactElement()
+    const component = reactComponent()
+
+    if (!element) return
+
+    const reactPortal = createPortal(component, element)
+
+    addReactChild(reactPortal)
+
+    onCleanup(() => removeReactChild(reactPortal))
   })
 
   return (
-    <div ref={solidToReactElement}>
-      {props.children && portalDomElement() && (
-        <Portal mount={portalDomElement()}>{props.children}</Portal>
-      )}
-    </div>
+    <>
+      <div
+        ref={setSolidReactElement}
+        data-react-component={componentName()}
+      >
+        {props.children && portalDomElement() && (
+          <Portal mount={portalDomElement()}>{props.children}</Portal>
+        )}
+      </div>
+    </>
   )
 }
 
