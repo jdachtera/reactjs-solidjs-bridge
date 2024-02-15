@@ -7,9 +7,9 @@
     "access": "public"
   },
   "type": "module",
-  "browser": "dist/main.js",
-  "main": "dist/main.js",
-  "main:umd": "dist/main.js",
+  "browser": "dist/react-solid-bridge.umd.js",
+  "main": "dist/react-solid-bridge.js",
+  "main:umd": "dist/react-solid-bridge.umd.js",
   "scripts": {
     "build": "vite build",
     "start": "vite"
