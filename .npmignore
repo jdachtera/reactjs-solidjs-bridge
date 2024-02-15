@@ -2,3 +2,4 @@
 /src
 /index.html
 /vite.config.ts
+/.rollup.cache
