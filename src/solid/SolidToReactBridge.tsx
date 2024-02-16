@@ -11,6 +11,7 @@ import {
 import { Portal } from 'solid-js/web'
 import { ReactToSolidPortalElement } from '../react/ReactToSolidPortalElement'
 import { ReactToSolidBridgeContext } from './SolidToReactBridgeContext'
+import { SolidToReactBridgeProvider } from './SolidToReactBridgeProvider'
 
 export type SolidToReactBridgeProps = {
   getReactComponent: ({
@@ -68,16 +69,16 @@ export const SolidToReactBridge: ParentComponent<SolidToReactBridgeProps> = (
   })
 
   return (
-    <>
-      <div
-        ref={setSolidReactElement}
-        data-react-component={componentName()}
-      >
-        {props.children && portalDomElement() && (
+    <div
+      ref={setSolidReactElement}
+      data-react-component={componentName()}
+    >
+      {props.children && portalDomElement() && (
+        <SolidToReactBridgeProvider>
           <Portal mount={portalDomElement()}>{props.children}</Portal>
-        )}
-      </div>
-    </>
+        </SolidToReactBridgeProvider>
+      )}
+    </div>
   )
 }
 

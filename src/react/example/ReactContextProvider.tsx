@@ -49,9 +49,11 @@ export const ReactContextProvider: FunctionComponent<
   )
 
   return (
-    <ReactContext.Provider value={providerValue}>
-      {props.children}
-    </ReactContext.Provider>
+    <div className="ReactContextProvider">
+      <ReactContext.Provider value={providerValue}>
+        {props.children}
+      </ReactContext.Provider>
+    </div>
   )
 }
 

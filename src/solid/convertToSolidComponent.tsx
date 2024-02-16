@@ -28,6 +28,11 @@ export function convertToSolidComponent<Props extends Record<string, unknown>>(
     </SolidToReactBridge>
   )
 
+  Object.defineProperty(ConvertedReactComponent, 'name', {
+    value: `${ReactComponent.displayName ?? ReactComponent.name}`,
+    writable: false,
+  })
+
   return ConvertedReactComponent
 }
 

@@ -1,6 +1,7 @@
 import path from 'path'
 import typescript from '@rollup/plugin-typescript'
 import reactPlugin from '@vitejs/plugin-react'
+import devtools from 'solid-devtools/vite'
 import { defineConfig } from 'vite'
 import solidPlugin from 'vite-plugin-solid'
 
@@ -49,6 +50,10 @@ export default defineConfig({
   },
 
   plugins: [
+    devtools({
+      /* features options - all disabled by default */
+      autoname: true, // e.g. enable autoname
+    }),
     solidPlugin({ include: /\/src\/solid/, ssr: true }),
     reactPlugin({ include: /\/src\/react/ }),
   ],

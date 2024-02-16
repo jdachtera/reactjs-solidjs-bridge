@@ -1,15 +1,16 @@
 import { render } from 'solid-js/web'
 import { ReactComponent } from '../../react/example/ReactComponent'
-import ReactContextConsumer from '../../react/example/ReactContextConsumer'
-import ReactContextProvider from '../../react/example/ReactContextProvider'
-import ReactStatefulComponent from '../../react/example/ReactStatefulComponent'
+import { ReactContextConsumer } from '../../react/example/ReactContextConsumer'
+import { ReactContextProvider } from '../../react/example/ReactContextProvider'
+import { ReactStatefulComponent } from '../../react/example/ReactStatefulComponent'
 import { SolidToReactBridgeProvider } from '../SolidToReactBridgeProvider'
 import { convertToSolidComponent } from '../convertToSolidComponent'
-import SolidComponent from './SolidComponent'
-import { SolidContextExposer } from './SolidContext'
-import SolidContextConsumer from './SolidContextConsumer'
+import { SolidComponent } from './SolidComponent'
+import { SolidContextConsumer } from './SolidContextConsumer'
 import { SolidContextProvider } from './SolidContextProvider'
-import SolidStatefulComponent from './SolidStatefulComponent'
+import { SolidStatefulComponent } from './SolidStatefulComponent'
+// eslint-disable-next-line import/no-extraneous-dependencies
+import 'solid-devtools'
 
 const ConvertedReactContextConsumer =
   convertToSolidComponent(ReactContextConsumer)
@@ -22,35 +23,27 @@ const ConvertedReactStatefulComponent = convertToSolidComponent(
 
 const dispose = render(
   () => (
-    <SolidToReactBridgeProvider>
-      <SolidContextProvider>
+    <SolidContextProvider>
+      <SolidToReactBridgeProvider>
         <SolidContextConsumer />
+        <ConvertedReactContextProvider>
+          <ConvertedReactContextConsumer />
 
-        <SolidContextExposer>
-          {({ count, setCount }) => (
-            <ConvertedReactContextProvider
-              count={count()}
-              setCount={setCount}
-            >
+          <ConvertedReactComponent>
+            <SolidContextConsumer />
+
+            <SolidComponent>
               <ConvertedReactContextConsumer />
 
-              <ConvertedReactComponent>
-                <SolidContextConsumer />
+              <ConvertedReactStatefulComponent count={1} />
 
-                <SolidComponent>
-                  <ConvertedReactContextConsumer />
-
-                  <ConvertedReactStatefulComponent count={count()} />
-
-                  <SolidContextConsumer />
-                  <SolidStatefulComponent count={count()} />
-                </SolidComponent>
-              </ConvertedReactComponent>
-            </ConvertedReactContextProvider>
-          )}
-        </SolidContextExposer>
-      </SolidContextProvider>
-    </SolidToReactBridgeProvider>
+              <SolidContextConsumer />
+              <SolidStatefulComponent count={2} />
+            </SolidComponent>
+          </ConvertedReactComponent>
+        </ConvertedReactContextProvider>
+      </SolidToReactBridgeProvider>
+    </SolidContextProvider>
   ),
   document.getElementById('solid-root') as HTMLDivElement,
 )

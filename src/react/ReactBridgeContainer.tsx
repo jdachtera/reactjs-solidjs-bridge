@@ -1,4 +1,4 @@
-import React, { ReactNode, useEffect, useState } from 'react'
+import { ReactNode, useEffect, useState } from 'react'
 
 type ReactBrideContainerProps = {
   subscribeToChildren: (
@@ -22,9 +22,7 @@ const ReactBridgeContainer = ({
     }
   }, [getChildren, subscribeToChildren])
 
-  return localChildren.map((node, index) => (
-    <React.Fragment key={index}>{node}</React.Fragment>
-  ))
+  return localChildren
 }
 
 export default ReactBridgeContainer
